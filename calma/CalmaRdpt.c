@@ -962,6 +962,7 @@ calmaElementText()
 			sl->lab_next = lab->lab_next;
 		    if (cifReadCellDef->cd_lastLabel == lab)
 			cifReadCellDef->cd_lastLabel = sl;
+		    BPDelete(cifReadCellDef->cd_labelPlane, lab);
 		    freeMagic((char *)lab);
 		    break;
 		}

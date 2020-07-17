@@ -290,8 +290,17 @@ extHierConnectFunc1(oneTile, ha)
     // name may refer to a range of array elements, and the generated
     // node only describes a single point.
 
+#if 0
     for (lab = cumDef->cd_labels;  lab;  lab = lab->lab_next)
 	if (GEO_TOUCH(&r, &lab->lab_rect) && (lab->lab_flags & LABEL_STICKY))
+#endif
+
+    BPEnum bpe;
+
+    BPEnumInit(&bpe, cumDef->cd_labelPlane, &r, BPE_TOUCH, "extHierConnections");
+    while(lab = BPEnumNext(&bpe))
+    {
+	if (lab->lab_flags & LABEL_STICKY)
 	    if (TTMaskHasType(connected, lab->lab_type))
 	    {
 		HashTable *table = &ha->ha_connHash;
@@ -349,6 +358,9 @@ extHierConnectFunc1(oneTile, ha)
 		}
 #endif
 	    }
+    }
+
+    BPEnumTerm(&bpe);
 
     return (0);
 }

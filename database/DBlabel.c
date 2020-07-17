@@ -218,6 +218,7 @@ DBPutFontLabel(cellDef, rect, font, size, rot, offset, align, text, type, flags)
 	cellDef->cd_lastLabel->lab_next = lab;
     }
     cellDef->cd_lastLabel = lab;
+    BPAdd(cellDef->cd_labelPlane, lab);
 
     DBFontLabelSetBBox(lab);
     DBUndoPutLabel(cellDef, lab);
@@ -300,6 +301,7 @@ DBEraseLabel(cellDef, area, mask, areaReturn)
 	if ((lab->lab_font >= 0) && areaReturn)
 	    GeoInclude(&lab->lab_bbox, areaReturn);
 
+	BPDelete(cellDef->cd_labelPlane, lab);
 	freeMagic((char *) lab);
 	lab = lab->lab_next;
 	erasedAny = TRUE;
@@ -411,6 +413,7 @@ DBEraseLabelsByContent(def, rect, type, text)
 	else labPrev->lab_next = lab->lab_next;
 	if (def->cd_lastLabel == lab)
 	    def->cd_lastLabel = labPrev;
+	BPDelete(def->cd_labelPlane, lab);
 	freeMagic((char *) lab);
 
 	/* Don't iterate through loop, since this will skip a label:
@@ -472,6 +475,7 @@ DBEraseLabelsByFunction(def, func)
 	else labPrev->lab_next = lab->lab_next;
 	if (def->cd_lastLabel == lab)
 	    def->cd_lastLabel = labPrev;
+	BPDelete(def->cd_labelPlane, lab);
 	freeMagic((char *) lab);
 
 	/* Don't iterate through loop, since this will skip a label:
@@ -628,6 +632,7 @@ DBAdjustLabelsNew(def, area, noreconnect)
 			    def->cd_lastLabel = labPrev;
 		    DBUndoEraseLabel(def, lab);
 		    DBWLabelChanged(def, lab, DBW_ALLWINDOWS);
+		    BPDelete(def->cd_labelPlane, lab);
 		    freeMagic((char *) lab);
 		    lab = lab->lab_next;
 		    modified = TRUE;
@@ -641,6 +646,8 @@ DBAdjustLabelsNew(def, area, noreconnect)
 		    DBUndoEraseLabel(def, lab);
 		    lab->lab_type = newType;
 		    DBUndoPutLabel(def, lab);
+		    BPDelete(def->cd_labelPlane, lab);
+		    BPAdd(def->cd_labelPlane, lab);
 		    modified = TRUE;
 	    }
     nextLab:

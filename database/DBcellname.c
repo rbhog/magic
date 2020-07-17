@@ -1485,6 +1485,7 @@ DBCellDefAlloc()
     cellDef->cd_parents = (CellUse *) NULL;
     cellDef->cd_labels = (Label *) NULL;
     cellDef->cd_lastLabel = (Label *) NULL;
+    cellDef->cd_labelPlane = BPNew();
     cellDef->cd_client = (ClientData) 0;
     cellDef->cd_props = (ClientData) NULL;
     cellDef->cd_timestamp = 0;
@@ -1698,7 +1699,11 @@ DBCellDefFree(cellDef)
     }
 
     for (lab = cellDef->cd_labels; lab; lab = lab->lab_next)
+    {
+	BPDelete(cellDef->cd_labelPlane, lab);
 	freeMagic((char *) lab);
+    }
+
     SigEnableInterrupts();
     HashKill(&cellDef->cd_idHash);
 

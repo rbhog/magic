@@ -208,7 +208,10 @@ DBCellClearDef(cellDef)
     cellDef->cd_extended.r_xbot = cellDef->cd_extended.r_ybot = 0;
     cellDef->cd_extended.r_xtop = cellDef->cd_extended.r_ytop = 1;
     for (lab = cellDef->cd_labels; lab; lab = lab->lab_next)
+    {
+	BPDelete(cellDef->cd_labelPlane, lab);
 	freeMagic((char *) lab);
+    }
     cellDef->cd_labels = (Label *) NULL;
     cellDef->cd_lastLabel = (Label *) NULL;
 

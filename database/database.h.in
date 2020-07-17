@@ -214,6 +214,10 @@ typedef unsigned char PaintResultType;
 
 typedef struct label
 {
+    void            *lab_bpLinks[BP_NUM_LINKS];		/* Labels in BPlane */
+    Rect            lab_rect;		/* Area of paint to which label is
+					 * attached.
+					 */
     TileType        lab_type;		/* Type of material to which this label
 					 * is attached.  This material, or
 					 * other materials that connect it,
@@ -222,9 +226,6 @@ typedef struct label
 					 * enforces this).  If there isn't
 					 * any such material, lab_type is
 					 * TT_SPACE.
-					 */
-    Rect            lab_rect;		/* Area of paint to which label is
-					 * attached.
 					 */
     Point	    lab_corners[4];	/* The four corners of the label.  Values
 					 * are in (database units / 8), and
@@ -343,6 +344,7 @@ typedef struct celldef
 					 */
     Label		*cd_labels;	/* Label list for this cell */
     Label		*cd_lastLabel; 	/* Last label in list for this cell. */
+    BPlane		*cd_labelPlane; /* BPlane record for the same labels. */
     char		*cd_technology;	/* Name of technology for this cell 
 					 * (Not yet used.)
 					 */
