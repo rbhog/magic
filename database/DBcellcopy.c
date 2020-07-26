@@ -501,10 +501,20 @@ DBCellCopyLabels(scx, mask, xMask, targetUse, pArea)
     if (!DBDescendSubcell(sourceUse, xMask))
 	return;
 
+#if 0
     for (lab = sourceUse->cu_def->cd_labels; lab; lab = lab->lab_next)
 	if (GEO_LABEL_IN_AREA(&lab->lab_rect, rect) &&
 		(TTMaskHasType(mask, lab->lab_type)
 		|| TTMaskHasType(mask, L_LABEL)))
+#endif
+
+    BPEnum bpe;
+
+    BPEnumInit(&bpe, sourceUse->cu_def->cd_labelPlane, pArea, BPE_LABEL_IN_AREA, "DBCellCopyLabels");
+
+    while(lab = BPEnumNext(&bpe))
+	if (TTMaskHasType(mask, lab->lab_type)
+	        || TTMaskHasType(mask, L_LABEL))
 	{
 	    GeoTransRect(&scx->scx_trans, &lab->lab_rect, &labTargetRect);
 	    targetPos = GeoTransPos(&scx->scx_trans, lab->lab_just);
@@ -524,6 +534,8 @@ DBCellCopyLabels(scx, mask, xMask, targetUse, pArea)
 	    if (pArea != NULL)
 		(void) GeoIncludeAll(&labTargetRect, pArea);
 	}
+
+    BPEnumTerm(&bpe);
 }
 
 /***

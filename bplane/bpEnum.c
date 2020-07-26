@@ -101,6 +101,23 @@ void BPEnumInit(BPEnum *bpe,   /* enum to initialize */
     }
     break;
 
+  case BPE_LABEL_IN_AREA:
+    GeoCanonicalRect(area, &bpe->bpe_srchArea);
+    GEO_EXPAND(&bpe->bpe_srchArea, -1, &bpe->bpe_srchArea);
+    inside = GEO_LABEL_IN_AREA(&bpe->bpe_srchArea, &bp->bp_bbox);
+    if(inside)
+    {
+      bpe->bpe_top->bps_state = BPS_BINS_INSIDE;
+    }
+    else
+    {
+      bpe->bpe_top->bps_state = BPS_BINS;
+      bpe->bpe_subBinMinX = GEO_WIDTH(&bpe->bpe_srchArea)/2;
+      bpe->bpe_subBinMinY = GEO_HEIGHT(&bpe->bpe_srchArea)/2;
+      bpBinsUpdate(bp);
+    }
+    break;
+
   case BPE_OVERLAP:
     GeoCanonicalRect(area, &bpe->bpe_srchArea);
     GEO_EXPAND(&bpe->bpe_srchArea, -1, &bpe->bpe_srchArea);

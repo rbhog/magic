@@ -209,6 +209,8 @@ extern void BPEnumInit(BPEnum *bpe, /* this procedure initializes this
 #define BPE_OVERLAP 2
   /* elements rect must be identical to area */
 #define BPE_EQUAL 3
+  /* the label must be inside (or touching boundary of) area */
+#define BPE_LABEL_IN_AREA 4
 
 /* return next element in enumeration (returns NULL if none) */
 #include "bplane/bpEnum.h"

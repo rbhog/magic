@@ -70,14 +70,21 @@ int extHierLabelFunc();
  */
 
 void
-extHierCopyLabels(sourceDef, targetDef)
+extHierCopyLabels(sourceDef, targetDef, rect)
     CellDef *sourceDef, *targetDef;
+    Rect *rect;
 {
     Label *lab, *newlab, *firstLab, *lastLab;
     unsigned n;
 
     firstLab = lastLab = (Label *) NULL;
+#if 0
     for (lab = sourceDef->cd_labels; lab; lab = lab->lab_next)
+#endif
+    BPEnum bpe;
+
+    BPEnumInit(&bpe, sourceDef->cd_labelPlane, rect, BPE_TOUCH, "extHierCopyLabels");
+    while(lab = BPEnumNext(&bpe))
     {
 	n = sizeof (Label) + strlen(lab->lab_text) - sizeof lab->lab_text + 1;
 	newlab = (Label *) mallocMagic((unsigned) n);
@@ -86,6 +93,10 @@ extHierCopyLabels(sourceDef, targetDef)
 	if (lastLab == NULL) lastLab = firstLab = newlab;
 	else lastLab->lab_next = newlab, lastLab = newlab;
     }
+
+    BPEnumTerm(&bpe);
+
+    /* TODO:Should we copy the label to targetDef bplane too? */
 
     if (lastLab)
     {
