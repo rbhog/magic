@@ -848,7 +848,7 @@ extSubtreeFunc(scx, ha)
 #ifdef	notdef
     extCopyPaint(oneFlat->et_use->cu_def, &ha->ha_subArea, cumUse->cu_def);
 #endif	/* notdef */
-    extHierCopyLabels(oneFlat->et_use->cu_def, cumUse->cu_def);
+    extHierCopyLabels(oneFlat->et_use->cu_def, cumUse->cu_def, &ha->ha_subArea);
 
     /* Prepend this tree to the list of trees we've processed so far */
     oneFlat->et_next = extSubList;
