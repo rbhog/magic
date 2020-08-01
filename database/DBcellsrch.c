@@ -500,6 +500,72 @@ DBNoTreeSrTiles(scx, mask, xMask, func, cdarg)
     return 0;
 }
 
+/* DBTreeSrLabelsIter is a support function for DBTreeSrLabels further
+ * below. See the latter function for descriptions of the parameters.
+ */
+static int
+DBTreeSrLabelsIter(lab, scx, mask, tpath, flags, func, cdarg)
+    Label *lab;
+    SearchContext *scx;
+    TileTypeBitMask * mask;
+    TerminalPath *tpath;
+    unsigned char flags;
+    int (*func)();
+    ClientData cdarg;
+{
+    Rect *r = &scx->scx_area;
+    bool is_touching;
+
+    is_touching = FALSE;
+
+    if ((lab->lab_font < 0) || (flags & TF_LABEL_ATTACH))
+    {
+	/* For non-manhattan searches, label must be in or	*/
+	/* touch the triangle.  (to-do:  needs a proper		*/
+	/* insideness test)					*/
+
+	if (flags & TF_LABEL_ATTACH_CORNER)
+	{
+	    Rect r1 = *r;
+	    Rect r2 = *r;
+	    if (flags & TF_LABEL_ATTACH_NOT_NE)
+	    {
+		r1.r_ytop = r->r_ybot;
+		r2.r_xtop = r->r_xbot;
+	    }
+	    else if (flags & TF_LABEL_ATTACH_NOT_NW)
+	    {
+		r1.r_ytop = r->r_ybot;
+		r2.r_xbot = r->r_xtop;
+	    }
+	    else if (flags & TF_LABEL_ATTACH_NOT_SE)
+	    {
+		r1.r_ybot = r->r_ytop;
+		r2.r_xtop = r->r_xbot;
+	    }
+	    else if (flags & TF_LABEL_ATTACH_NOT_SW)
+	    {
+		r1.r_ybot = r->r_ytop;
+		r2.r_xbot = r->r_xtop;
+	    }
+	    is_touching = GEO_TOUCH(&lab->lab_bbox, &r1) ||
+		  GEO_TOUCH(&lab->lab_bbox, &r2);
+	}
+	else
+	    is_touching = GEO_TOUCH(&lab->lab_rect, r);
+    }
+    if (!is_touching && (flags & TF_LABEL_DISPLAY) &&
+	lab->lab_font >= 0)
+    {
+	/* Check against bounds of the rendered label text */
+	is_touching = GEO_TOUCH(&lab->lab_bbox, r);
+    }
+
+    if (is_touching && TTMaskHasType(mask, lab->lab_type))
+	if ((*func)(scx, lab, tpath, cdarg))
+	    return (1);
+    return 0;
+}
 
 /*
  *-----------------------------------------------------------------------------
@@ -574,7 +640,6 @@ DBTreeSrLabels(scx, mask, xMask, tpath, flags, func, cdarg)
     CellUse *cellUse = scx->scx_use;
     CellDef *def = cellUse->cu_def;
     TreeFilter filter;
-    bool is_touching;
     int dbCellLabelSrFunc();
 
     ASSERT(def != (CellDef *) NULL, "DBTreeSrLabels");
@@ -585,56 +650,35 @@ DBTreeSrLabels(scx, mask, xMask, tpath, flags, func, cdarg)
 	if (!DBCellRead(def, (char *) NULL, TRUE, dereference, NULL)) return 0;
     }
 
-    for (lab = def->cd_labels; lab; lab = lab->lab_next)
+    /* bplane routine only sees lab_rect so we will use bplane optimization
+     * only for TF_LABEL_ATTACH. TF_LABEL_DISPLAY also looks for lab_bbox
+     * so we cannot use this implementation when TF_LABEL_DISPLAY is set.
+     * This function could be called with both flags set.
+     */
+    if ((flags & TF_LABEL_ATTACH) && (!flags & TF_LABEL_DISPLAY))
     {
-	if (SigInterruptPending) break;
-	is_touching = FALSE;
-
-	if ((lab->lab_font < 0) || (flags & TF_LABEL_ATTACH))
+	BPEnum bpe;
+	
+	BPEnumInit(&bpe, def->cd_labelPlane, r, BPE_TOUCH, "DBTreeSrLabels");
+	while (lab = BPEnumNext(&bpe))
 	{
-	    /* For non-manhattan searches, label must be in or	*/
-	    /* touch the triangle.  (to-do:  needs a proper	*/
-	    /* insideness test)					*/
-
-	    if (flags & TF_LABEL_ATTACH_CORNER)
-	    {
-		Rect r1 = *r;
-		Rect r2 = *r;
-		if (flags & TF_LABEL_ATTACH_NOT_NE)
-		{
-		    r1.r_ytop = r->r_ybot;
-		    r2.r_xtop = r->r_xbot;
-		}
-		else if (flags & TF_LABEL_ATTACH_NOT_NW)
-		{
-		    r1.r_ytop = r->r_ybot;
-		    r2.r_xbot = r->r_xtop;
-		}
-		else if (flags & TF_LABEL_ATTACH_NOT_SE)
-		{
-		    r1.r_ybot = r->r_ytop;
-		    r2.r_xtop = r->r_xbot;
-		}
-		else if (flags & TF_LABEL_ATTACH_NOT_SW)
-		{
-		    r1.r_ybot = r->r_ytop;
-		    r2.r_xbot = r->r_xtop;
-		}
-		is_touching = GEO_TOUCH(&lab->lab_bbox, &r1) ||
-			  GEO_TOUCH(&lab->lab_bbox, &r2);
-	    }
-	    else
-		is_touching = GEO_TOUCH(&lab->lab_rect, r);
+	    if (SigInterruptPending) break;
+	    if (DBTreeSrLabelsIter(lab, scx, mask, tpath, flags, func, cdarg)
+		== 1)
+		return 1;
 	}
-	if (!is_touching && (flags & TF_LABEL_DISPLAY) && lab->lab_font >= 0)
+	
+	BPEnumTerm(&bpe);
+    }
+    else
+    {
+	for (lab = def->cd_labels; lab; lab = lab->lab_next)
 	{
-	    /* Check against bounds of the rendered label text */
-	    is_touching = GEO_TOUCH(&lab->lab_bbox, r);
+	    if (SigInterruptPending) break;
+	    if (DBTreeSrLabelsIter(lab, scx, mask, tpath, flags, func, cdarg)
+		== 1)
+		return 1;
 	}
-
-	if (is_touching && TTMaskHasType(mask, lab->lab_type))
-	    if ((*func)(scx, lab, tpath, cdarg))
-		return (1);
     }
 
     filter.tf_func = func;
