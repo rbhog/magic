@@ -705,15 +705,20 @@ SelectShort(char *lab1, char *lab2)
 
     /* Step one: find the tiles containing the labels.  If not found,	*/
     /* return NULL.							*/
+    srclab = IHashLookup(SelectDef->cd_labelHash, lab1);
+    destlab = IHashLookup(SelectDef->cd_labelHash, lab2);
 
-    for (selLabel = SelectDef->cd_labels; selLabel != NULL; selLabel =
-	selLabel->lab_next)
+    if (srclab == NULL || destlab == NULL)
     {
-	if ((srclab == NULL) && Match(lab1, selLabel->lab_text))
-	    srclab = selLabel;
+	for (selLabel = SelectDef->cd_labels; selLabel != NULL; selLabel =
+	     selLabel->lab_next)
+	{
+	    if ((srclab == NULL) && Match(lab1, selLabel->lab_text))
+		srclab = selLabel;
 
-	if ((destlab == NULL) && Match(lab2, selLabel->lab_text))
-	    destlab = selLabel;
+	    if ((destlab == NULL) && Match(lab2, selLabel->lab_text))
+		destlab = selLabel;
+	}
     }
 
     /* Must be able to find both labels */

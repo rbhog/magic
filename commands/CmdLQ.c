@@ -1142,31 +1142,33 @@ portFindLabel(editDef, port, unique, nonEdit)
     lab = NULL;
     for (sl = editDef->cd_labels; sl != NULL; sl = sl->lab_next)
     {
-	if (GEO_OVERLAP(&editBox, &sl->lab_rect) ||
-			GEO_SURROUND(&editBox, &sl->lab_rect))
+	if (GEO_SURROUND(&editBox, &sl->lab_rect))
 	{
 	    if (found > 0)
 	    {
-		/* Let's do this again with the GEO_SURROUND function	*/
-		/* and see if we come up with only one label.		*/
-
-		found = 0;
-		for (sl = editDef->cd_labels; sl != NULL; sl = sl->lab_next)
-		{
-		    if (GEO_SURROUND(&editBox, &sl->lab_rect))
-		    {
-			if (found > 0 && unique == TRUE) return NULL;
-			lab = sl;
-			found++;
-		    }
-		}
-		break;
+		if (unique == TRUE) return NULL;
 	    }
 	    lab = sl;
 	    found++;
 	    if (nonEdit) *nonEdit = FALSE;
 	}
     }
+
+#if 0
+    for (sl = editDef->cd_labels; sl != NULL; sl = sl->lab_next)
+    {
+	if (GEO_OVERLAP(&editBox, &sl->lab_rect))
+	{
+	    if (found > 0)
+	    {
+		if (unique == TRUE) return NULL;
+	    }
+	    lab = sl;
+	    found++;
+	    if (nonEdit) *nonEdit = FALSE;
+	}
+    }
+#endif
 
     /* If no label was found, then search the hierarchy under the box.	*/
     /* The calling routine may determine whether a label that is not in	*/

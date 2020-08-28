@@ -253,6 +253,10 @@ typedef struct label
 					 * marking port labels
 					 */
     struct label   *lab_next;      	/* Next label in list */
+    struct label   *lab_hashNext;      	/* Used for multiple labels with
+					 * same name
+					 */
+
     char            lab_text[4];   	/* Actual text of label.  This field
                                          * is just a place-holder: the actual
                                          * field will be large enough to
@@ -345,6 +349,10 @@ typedef struct celldef
     Label		*cd_labels;	/* Label list for this cell */
     Label		*cd_lastLabel; 	/* Last label in list for this cell. */
     BPlane		*cd_labelPlane; /* BPlane record for the same labels. */
+
+    IHashTable		*cd_labelHash;  /* Hash table record for the
+				       	 * same labels.
+				         */
     char		*cd_technology;	/* Name of technology for this cell 
 					 * (Not yet used.)
 					 */

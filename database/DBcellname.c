@@ -1491,6 +1491,8 @@ DBCellDefAlloc()
     cellDef->cd_timestamp = 0;
     TTMaskZero(&cellDef->cd_types);
     HashInit(&cellDef->cd_idHash, 16, HT_STRINGKEYS);
+    IHashInit(4, OFFSET(Label, lab_text), OFFSET(Label, lab_hashNext), 
+		IHashStringKeyHash, IHashStringKeyEq);
 
     cellDef->cd_cellPlane = BPNew();
     cellDef->cd_planes[PL_ROUTER] = DBNewPlane((ClientData) NULL);
@@ -1700,6 +1702,8 @@ DBCellDefFree(cellDef)
 
     for (lab = cellDef->cd_labels; lab; lab = lab->lab_next)
     {
+	IHashClear(cellDef->cd_labelHash);
+	IHashFree(cellDef->cd_labelHash);
 	BPDelete(cellDef->cd_labelPlane, lab);
 	freeMagic((char *) lab);
     }

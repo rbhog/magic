@@ -219,6 +219,7 @@ DBPutFontLabel(cellDef, rect, font, size, rot, offset, align, text, type, flags)
     }
     cellDef->cd_lastLabel = lab;
     BPAdd(cellDef->cd_labelPlane, lab);
+    IHashAdd(cellDef->cd_labelHash, lab);
 
     DBFontLabelSetBBox(lab);
     DBUndoPutLabel(cellDef, lab);
@@ -301,6 +302,7 @@ DBEraseLabel(cellDef, area, mask, areaReturn)
 	if ((lab->lab_font >= 0) && areaReturn)
 	    GeoInclude(&lab->lab_bbox, areaReturn);
 
+	IHashDelete(cellDef->cd_labelHash, lab);
 	BPDelete(cellDef->cd_labelPlane, lab);
 	freeMagic((char *) lab);
 	lab = lab->lab_next;
@@ -353,6 +355,7 @@ DBCheckLabelsByContent(def, rect, type, text)
 {
     Label *lab;
 
+#if 0
     for (lab = def->cd_labels; lab; lab = lab->lab_next)
     {
 	if ((rect != NULL) && !(RECTEQUAL(&lab->lab_rect, rect))) continue;
@@ -360,6 +363,28 @@ DBCheckLabelsByContent(def, rect, type, text)
 	if ((text != NULL) && (strcmp(text, lab->lab_text) != 0)) continue;
 
 	return lab;
+    }
+    return NULL;
+#endif
+    if (text != NULL)
+    {
+	lab = IHashLookUp(def->cd_labelHash, text);
+	if (lab->lab_hashNext == NULL)
+	{
+	    if (rect == NULL) return lab;
+	    return (RECTEQUAL(&lab->lab_rect, rect)) ? lab : NULL;
+	}
+    }
+    if (rect != NULL)
+    {
+	BPEnum bpe;
+	BPEnumInit(&bpe, def->cd_labelPlane, rect, BPE_EQUAL, "DBCheckLabelsByContent");
+	
+	while(lab = BPEnumNext(&bpe))
+	{
+	    if (text == NULL) return lab;
+	    if (!strcmp(text, lab->text)) return lab;
+	}
     }
     return NULL;
 }
@@ -413,6 +438,7 @@ DBEraseLabelsByContent(def, rect, type, text)
 	else labPrev->lab_next = lab->lab_next;
 	if (def->cd_lastLabel == lab)
 	    def->cd_lastLabel = labPrev;
+	IHashDelete(def->cd_labelHash, lab);
 	BPDelete(def->cd_labelPlane, lab);
 	freeMagic((char *) lab);
 
@@ -475,6 +501,7 @@ DBEraseLabelsByFunction(def, func)
 	else labPrev->lab_next = lab->lab_next;
 	if (def->cd_lastLabel == lab)
 	    def->cd_lastLabel = labPrev;
+	IHashDelete(def->cd_labelHash, lab);
 	BPDelete(def->cd_labelPlane, lab);
 	freeMagic((char *) lab);
 
@@ -632,6 +659,7 @@ DBAdjustLabelsNew(def, area, noreconnect)
 			    def->cd_lastLabel = labPrev;
 		    DBUndoEraseLabel(def, lab);
 		    DBWLabelChanged(def, lab, DBW_ALLWINDOWS);
+		    IHashDelete(def->cd_labelHash, lab);
 		    BPDelete(def->cd_labelPlane, lab);
 		    freeMagic((char *) lab);
 		    lab = lab->lab_next;
